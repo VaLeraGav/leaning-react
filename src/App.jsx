@@ -1,73 +1,51 @@
-
-
-import { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-
-import { addNewTodo, fetchTodos } from './store/todoSlice';
-import NewTodoForm from './components/NewTodoForm';
-import TodoList from './components/TodoList';
+import { useState } from 'react';
+import { useGetGoodsQuery, useAddProductMutation, useDeleteProductMutation } from './redux';
 
 function App() {
-  const [text, setText] = useState('');
-  const { status, error } = useSelector(state => state.todos);
+  const [count, setCount] = useState('');
+  const [newProduct, setNewProduct] = useState('');
+  const {data = [], isLoading} = useGetGoodsQuery(count);
+  const [addProduct, {isError}] = useAddProductMutation();
+  const [deleteProduct] = useDeleteProductMutation();
 
-  const dispatch = useDispatch();
-
-  const handleAction = () => {
-    if (text.trim().length) {
-      dispatch(addNewTodo(text));
-      setText('');
+  const handleAddProduct = async () => {
+    if(newProduct) {
+      await addProduct({name: newProduct}).unwrap();
+      setNewProduct('');
     }
-  };
+  }
 
-  useEffect(() => {
-    dispatch(fetchTodos());
-  }, [dispatch]);
+  const handleDeleteProduct = async (id) => {
+    await deleteProduct(id).unwrap();
+  }
 
-  // const addTodo = () => {
-  //   if (text.trim().length)
-  //     setTodos([
-  //       ...todos,
-  //       {
-  //         id: new Date().toISOString(),
-  //         text,
-  //         completed: false
-  //       }
-  //     ]);
-  //   setText('');
-  // };
-
-  // const toggleTodoComplete = (todoId) => {
-
-  //   setTodos(
-  //     todos.map(
-  //       todo => {
-  //         if (todo.id !== todoId) return todo;
-  //         return {
-  //           ...todo,
-  //           completed: !todo.completed,
-  //         };
-  //       }
-  //     )
-  //   );
-  // };
-
-  // const removeTodo = (todoId) => {
-  //   setTodos(todos.filter(todo => todo.id !== todoId));
-  // };
+  if (isLoading) return <h1>Loading...</h1>
 
   return (
-    <div className='App'>
-      <NewTodoForm
-        value={text}
-        updateText={setText}
-        handleAction={handleAction}
-      />
-
-      {status === 'loading' && <h2>Loading...</h2>}
-      {error && <h2>An error occured: {error}</h2>}
-
-      <TodoList />
+    <div>
+      <div>
+        <input
+          type="text"
+          value={newProduct}
+          onChange={(e) => setNewProduct(e.target.value)}
+        />
+        <button onClick={handleAddProduct}>Add product</button>
+      </div>
+      <div>
+        <select value={count} onChange={(e) => setCount(e.target.value)}>
+          <option value="">all</option>
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+        </select>
+      </div>
+      <ul>
+        {data.map(item => (
+          <li key={item.id} onClick={() => handleDeleteProduct(item.id)}>
+            {item.name}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
